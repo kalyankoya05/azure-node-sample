@@ -28,6 +28,10 @@ app.get("/login", (_, res) => {
   res.sendFile(path.join(__dirname, "login.html"));
 });
 
+app.get("/amazon", (_, res) => {
+  res.sendFile(path.join(__dirname, "amazon.html"));
+});
+
 // POST /login → check credentials in your Users table
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
