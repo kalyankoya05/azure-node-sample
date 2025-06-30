@@ -1,76 +1,83 @@
 // index.js
 require("dotenv").config();
 const express = require("express");
-const sql = require("mssql");
+const mysql = require("mysql2/promise");
 const path = require("path");
 
 const app = express();
 const port = process.env.PORT || 3000;
-const connStr = process.env.SQL_CONNECTION;
 
-if (!connStr) {
-  console.error("ERROR: SQL_CONNECTION is missing");
-  process.exit(1);
-}
-
-const pool = new sql.ConnectionPool(connStr);
-const poolConnect = pool.connect();
-pool.on("error", err => console.error("SQL pool error", err));
-
-// Serve your login form
-app.get("/login", (_, res) => {
-  res.sendFile(path.join(__dirname, "login.html"));
+// build a MySQL pool
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
-// Display actual DB contents on the home page
-app.get("/", async (req, res) => {
+// middleware
+app.use(express.urlencoded({ extended: true }));
+
+// login form
+app.get("/login", (_, res) => res.sendFile(path.join(__dirname, "login.html")));
+
+// handle login
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
   try {
-    await poolConnect;
-
-    // 1) Show the database name
-    const dbNameResult = await pool.request()
-      .query("SELECT DB_NAME() AS name");
-    const dbName = dbNameResult.recordset[0].name;
-
-    // 2) Read all rows from your Users table
-    const usersResult = await pool.request()
-      .query("SELECT UserId, UserName, UserPass FROM Users");
-
-    // 3) Build an HTML page
-    let html = `
-      <h1>Connected to database: ${dbName}</h1>
-      <h2>All Users</h2>
-      <table border="1" cellpadding="5" cellspacing="0">
-        <thead>
-          <tr>
-            <th>UserId</th>
-            <th>UserName</th>
-            <th>UserPass</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-    usersResult.recordset.forEach(row => {
-      html += `
-        <tr>
-          <td>${row.UserId}</td>
-          <td>${row.UserName}</td>
-          <td>${row.UserPass}</td>
-        </tr>
-      `;
-    });
-    html += `
-        </tbody>
-      </table>
-    `;
-
-    res.send(html);
+    const [rows] = await pool.execute(
+      "SELECT COUNT(*) AS cnt FROM Users WHERE UserName = ? AND UserPass = ?",
+      [username, password]
+    );
+    if (rows[0].cnt > 0) {
+      res.redirect("/");
+    } else {
+      res
+        .status(401)
+        .send('<h2>Invalid credentials</h2><a href="/login">Try again</a>');
+    }
   } catch (err) {
-    console.error("DB query error", err);
-    res.status(500).send("Database error: " + err.message);
+    console.error("DB error", err);
+    res.status(500).send("Server error");
   }
 });
 
-app.listen(port, () => {
-  console.log(`App listening on http://localhost:${port}`);
+// home – show actual DB name & user list
+app.get("/", async (_, res) => {
+  try {
+    // 1) get current database
+    const [dbInfo] = await pool.query("SELECT DATABASE() AS name");
+    const dbName = dbInfo[0].name;
+
+    // 2) list all users
+    const [users] = await pool.query(
+      "SELECT UserId, UserName, UserPass FROM Users"
+    );
+
+    // 3) render a simple HTML table
+    let html = `<h1>Connected to database: ${dbName}</h1>
+                <h2>Users</h2>
+                <table border="1" cellpadding="5">
+                  <thead>
+                    <tr><th>ID</th><th>UserName</th><th>Password</th></tr>
+                  </thead><tbody>`;
+    for (let u of users) {
+      html += `<tr>
+                 <td>${u.UserId}</td>
+                 <td>${u.UserName}</td>
+                 <td>${u.UserPass}</td>
+               </tr>`;
+    }
+    html += "</tbody></table>";
+    res.send(html);
+  } catch (err) {
+    console.error("DB error", err);
+    res.status(500).send("Database error");
+  }
 });
+
+app.listen(port, () => console.log(`App running: http://localhost:${port}`));
