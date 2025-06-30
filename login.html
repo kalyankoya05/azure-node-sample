@@ -1,151 +1,115 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <title>Login Form</title>
+  <meta charset="UTF-8" />
+  <title>Login</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f0f0;
+    /* reset & base */
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
-    .login-wrap {
-      width: 100%;
-      max-width: 400px;
-      margin: 30px auto;
-      position: relative;
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* form container */
+    .login-container {
       background: #fff;
-      padding: 20px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
       border-radius: 8px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
-    .login-html {
-      position: relative;
-    }
-
-    .tab {
-      display: inline-block;
-      margin: 0;
-      padding: 15px 20px;
-      cursor: pointer;
+    .login-container h2 {
       text-align: center;
-      background: #f8f8f8;
-      border-bottom: 2px solid transparent;
-      font-weight: bold;
-      font-size: 16px;
-      transition: background 0.3s, border-bottom 0.3s;
+      margin-bottom: 1.5rem;
+      color: #333;
     }
 
-    .tab:hover,
-    .tab:checked {
-      background: #e0e0e0;
-      border-bottom: 2px solid #4caf50;
-    }
-
-    .group {
-      margin: 20px 0;
-    }
-
-    .label {
-      font-size: 14px;
-      margin-bottom: 8px;
+    /* form elements */
+    .login-container label {
       display: block;
+      margin-bottom: 0.5rem;
+      color: #555;
+      font-size: 0.9rem;
     }
 
-    .input {
+    .login-container input {
       width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
+      padding: 0.6rem 0.8rem;
+      margin-bottom: 1.2rem;
+      border: 1px solid #ccc;
       border-radius: 4px;
+      font-size: 1rem;
     }
 
-    .button {
+    .login-container input:focus {
+      border-color: #0078d4;
+      outline: none;
+    }
+
+    /* button */
+    .login-container button {
       width: 100%;
-      padding: 10px;
-      background: #4caf50;
+      padding: 0.7rem;
+      background: #0078d4;
       border: none;
-      color: #fff;
-      font-size: 16px;
       border-radius: 4px;
+      color: #fff;
+      font-size: 1rem;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: background 0.2s ease-in-out;
     }
 
-    .button:hover {
-      background: #45a049;
+    .login-container button:hover {
+      background: #005a9e;
     }
 
-    .hr {
-      border: 0;
-      border-top: 1px solid #ddd;
-    }
-
-    .foot-lnk {
+    /* small link */
+    .login-container .help {
+      margin-top: 1rem;
       text-align: center;
-      font-size: 12px;
+      font-size: 0.85rem;
+    }
+
+    .login-container .help a {
+      color: #0078d4;
+      text-decoration: none;
+    }
+
+    .login-container .help a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 
 <body>
-  <div class="login-wrap">
-    <div class="login-html">
-      <input id="tab-1" type="radio" name="tab" class="sign-in" checked>
-      <label for="tab-1" class="tab">Sign In</label>
-      <input id="tab-2" type="radio" name="tab" class="sign-up">
-      <label for="tab-2" class="tab">Sign Up</label>
-      <div class="login-form">
-        <div class="sign-in-htm">
-          <div class="group">
-            <label for="user" class="label">Username</label>
-            <input id="user" type="text" class="input">
-          </div>
-          <div class="group">
-            <label for="pass" class="label">Password</label>
-            <input id="pass" type="password" class="input" data-type="password">
-          </div>
-          <div class="group">
-            <input id="check" type="checkbox" class="check" checked>
-            <label for="check"><span class="icon"></span> Keep me Signed in</label>
-          </div>
-          <div class="group">
-            <input type="submit" class="button" value="Sign In">
-          </div>
-          <div class="hr"></div>
-          <div class="foot-lnk">
-            <a href="#forgot">Forgot Password?</a>
-          </div>
-        </div>
-        <div class="sign-up-htm">
-          <div class="group">
-            <label for="user" class="label">Username</label>
-            <input id="user" type="text" class="input">
-          </div>
-          <div class="group">
-            <label for="pass" class="label">Password</label>
-            <input id="pass" type="password" class="input" data-type="password">
-          </div>
-          <div class="group">
-            <label for="pass" class="label">Repeat Password</label>
-            <input id="pass" type="password" class="input" data-type="password">
-          </div>
-          <div class="group">
-            <label for="pass" class="label">Email Address</label>
-            <input id="pass" type="text" class="input">
-          </div>
-          <div class="group">
-            <input type="submit" class="button" value="Sign Up">
-          </div>
-          <div class="hr"></div>
-          <div class="foot-lnk">
-            <label for="tab-1">Already Member?</label>
-          </div>
-        </div>
+  <div class="login-container">
+    <h2>Log In</h2>
+    <form method="POST" action="/login">
+      <label for="username">Username</label>
+      <input id="username" type="text" name="username" required />
+
+      <label for="password">Password</label>
+      <input id="password" type="password" name="password" required />
+
+      <button type="submit">Log In</button>
+
+      <div class="help">
+        <a href="#">Forgot password?</a>
       </div>
-    </div>
+    </form>
   </div>
 </body>
 
