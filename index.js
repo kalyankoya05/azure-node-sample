@@ -8,9 +8,6 @@ const app = express();
 const port = process.env.PORT || 3000;
 const connStr = process.env.SQL_CONNECTION;
 
-// parse application/x-www-form-urlencoded
-app.use(express.urlencoded({ extended: true }));
-
 if (!connStr) {
   console.error("ERROR: SQL_CONNECTION is missing");
   process.exit(1);
@@ -18,53 +15,56 @@ if (!connStr) {
 
 const pool = new sql.ConnectionPool(connStr);
 const poolConnect = pool.connect();
+pool.on("error", err => console.error("SQL pool error", err));
 
-pool.on("error", (err) => {
-  console.error("SQL pool error", err);
-});
-
-// GET /login → serve the HTML form
+// Serve your login form
 app.get("/login", (_, res) => {
   res.sendFile(path.join(__dirname, "login.html"));
 });
 
-app.get("/amazon", (_, res) => {
-  res.sendFile(path.join(__dirname, "amazon.html"));
-});
-
-// POST /login → check credentials in your Users table
-app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
+// Display actual DB contents on the home page
+app.get("/", async (req, res) => {
   try {
     await poolConnect;
-    const result = await pool
-      .request()
-      .input("u", sql.VarChar(50), username)
-      .input("p", sql.VarChar(50), password)
-      .query(
-        "SELECT COUNT(*) AS cnt FROM Users WHERE UserName = @u AND UserPass = @p"
-      );
 
-    if (result.recordset[0].cnt > 0) {
-      // on success, redirect to home
-      res.redirect("/");
-    } else {
-      res
-        .status(401)
-        .send("<h2>Invalid credentials</h2><a href='/login'>Try again</a>");
-    }
-  } catch (err) {
-    console.error("DB query error", err);
-    res.status(500).send("Server error");
-  }
-});
+    // 1) Show the database name
+    const dbNameResult = await pool.request()
+      .query("SELECT DB_NAME() AS name");
+    const dbName = dbNameResult.recordset[0].name;
 
-// GET / → your existing DB-name page
-app.get("/", async (_, res) => {
-  try {
-    await poolConnect;
-    const result = await pool.request().query("SELECT DB_NAME() AS name");
-    res.send(`<h1>Connected to ${result.recordset[0].name}</h1>`);
+    // 2) Read all rows from your Users table
+    const usersResult = await pool.request()
+      .query("SELECT UserId, UserName, UserPass FROM Users");
+
+    // 3) Build an HTML page
+    let html = `
+      <h1>Connected to database: ${dbName}</h1>
+      <h2>All Users</h2>
+      <table border="1" cellpadding="5" cellspacing="0">
+        <thead>
+          <tr>
+            <th>UserId</th>
+            <th>UserName</th>
+            <th>UserPass</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    usersResult.recordset.forEach(row => {
+      html += `
+        <tr>
+          <td>${row.UserId}</td>
+          <td>${row.UserName}</td>
+          <td>${row.UserPass}</td>
+        </tr>
+      `;
+    });
+    html += `
+        </tbody>
+      </table>
+    `;
+
+    res.send(html);
   } catch (err) {
     console.error("DB query error", err);
     res.status(500).send("Database error: " + err.message);
